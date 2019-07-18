@@ -1,2 +1,9 @@
 définir un bloc mémoire:
 Nous avons de la difficulté à comprendre si lorsque l'on appelle malloc, la métadonnée des blocs est comprise dans la mémoire réservée.
+- Nous appelons malloc (comme mmap) pour obtenir des chunks de mémoire de 4ko pour stocker les données du programmeur. On renvoie
+  au programmeur une adresse de ce chunk où il peut mettre des données en mémoire.
+  Nous utilisons des métadonnées appelées 'block' qui contiennent les informations de taille, de références et d'adresse.
+  Nous avons de la difficulté à comprendre si le 'block' de métadonnées se trouve dans le chunk avant l'espace réservée aux données du programmeur, ou
+  s'il se trouve ailleurs dans le programme et qu'il pointe à une adresse du chunk où le programmeur peut stocker ses données.
+
+  
