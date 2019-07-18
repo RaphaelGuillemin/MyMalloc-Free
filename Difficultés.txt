@@ -6,4 +6,5 @@ Nous avons de la difficulté à comprendre si lorsque l'on appelle malloc, la m�
   Nous avons de la difficulté à comprendre si le 'block' de métadonnées se trouve dans le chunk avant l'espace réservée aux données du programmeur, ou
   s'il se trouve ailleurs dans le programme et qu'il pointe à une adresse du chunk où le programmeur peut stocker ses données.
 
+- On ne sait pas si lorsqu'on demande 4096 octets de mémoire à malloc, la métadonnée de notre chunk est comprise dedans.
   
