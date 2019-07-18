@@ -19,7 +19,7 @@ struct block{
 typedef struct memoryChunk memoryChunk;
 struct memoryChunk{
 	block *head;
-	int remainingSize;
+	int maxSizeBetweenBlocks;
 	memoryChunk *nextChunk;
 };
 
@@ -37,26 +37,46 @@ void* chunk_get (void *memory, int byte) {
 	memoryChunk *chunk = memory;
 	while(byte > 0 && chunk->nextChunk != NULL) {
 		chunk = chunk->nextChunk;
-		byte = byte - 4096;
+		byte = byte - chunkSize;
 	}
+	return &chunk;
 }
-
 
 void *mymalloc(size_t size){
   // doit retourner une plage mémoire assez large.
   // première étape : définir un bloc de 4*1024 octets avec malloc
   	if (&memory == NULL){
-		memoryChunk *chunk = malloc(4*1024);
+		memoryChunk *chunk = malloc(chunkSize);
 		block block = {0, size, 1, NULL};
 		chunk->head = &block;
-		chunk->remainingSize = 4*1024 - block.size;
+		chunk->maxSizeBetweenBlocks = chunkSize - block.size - sizeof(block);
 		memory = &chunk;
+		return &block+sizeof(block);
 	} else {
-
+		memoryChunk *chunk = &memory;
+		//Verification taille maximale entre deux blocs est plus grande que la taille souhaitée + la taille de la métadonnée block
+		if (chunk->maxSizeBetweenBlocks > size + sizeof(block)){
+			block *currentBlock = chunk->head;
+			//Si le premier bloc du chunck n'est pas suivi ou si espace suffisant entre deux blocs
+			while(currentBlock->nextBlock !=NULL && currentBlock->nextBlock->adress - currentBlock->size + sizeof(currentBlock) < size){
+				currentBlock = currentBlock->nextBlock;
+			}
+			block *newBlock = {currentBlock->size + currentBlock->adress + 1, size, 1, NULL};
+			currentBlock->nextBlock = &newBlock;
+			chunk->maxSizeBetweenBlocks = chunk->maxSizeBetweenBlocks - newBlock->size - sizeof(newBlock);
+		} else if (chunk->nextChunk == NULL){
+			//CREER NOUVEAU CHUNK
+			memoryChunk *chunk = malloc(chunkSize);
+			block block = {0, size, 1, NULL};
+			chunk->head = &block;
+			chunk->maxSizeBetweenBlocks = chunkSize - block.size - sizeof(block);
+		} else {
+			//PASSER AU PROCHAIN CHUNK
+			while(chunk->nextChunk != NULL && chunk->maxSizeBetweenBlocks < size){
+				chunk = chunk->nextChunk;
+			}
+		}
 	}
-
-
-	
 }
 
 int refinc(void *ptr){

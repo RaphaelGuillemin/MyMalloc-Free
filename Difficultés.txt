@@ -1,1 +1,2 @@
-définir un bloc mémoire
+définir un bloc mémoire:
+Nous avons de la difficulté à comprendre si lorsque l'on appelle malloc, la métadonnée des blocs est comprise dans la mémoire réservée.
