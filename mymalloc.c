@@ -5,26 +5,34 @@
 #include <stdbool.h>
 #include "mymalloc.h"
 
-void *head = NULL;
-int remainingSize;
+void *memory;
 
-typedef struct memoryBlock memoryBlock;
-
-struct memoryBlock{
+typedef struct block block;
+struct block{
 	size_t size;
 	void *adress;
 	int count;
-	memoryBlock *nextBlock;
+	block *nextBlock;
 };
+
+typedef struct memoryChunk memoryChunk;
+struct memoryChunk{
+	void *adress;
+	block *head;
+	int remainingSize;
+};
+
 
 void *mymalloc(size_t size){
   // doit retourner une plage mémoire assez large.
   // première étape : définir un bloc de 4*1024 octets avec malloc
-  	if (&head==NULL){
-		head=malloc(4*1024);
-		remainingSize = 4*1024;
+  	if (&memory==NULL){
+		memoryChunk *chunk = malloc(4*1024);
+		chunk.remainingSize = 4*1024;
 	}
-	
+
+
+
 	remainingSize=remainingSize-size;
 	
 }
