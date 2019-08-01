@@ -75,7 +75,7 @@ int test6(){
 
   // Création d'une liste doublement chaînée
   node *current = root;
-  for(int i = 0; i < 4 ; i ++){
+  for(int i = 0; i < 4 * 1024 * 1024; i ++){
     node *p = mymalloc(sizeof(node));
     p->valueInt = i;
     p->valueChar = 115;

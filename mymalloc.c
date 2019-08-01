@@ -37,7 +37,7 @@ memoryChunk* bestChunk; //pointeur vers le chunk contenant le bloc libre le plus
 memoryChunk* createNewChunk(int size) {
 	memoryChunk *newChunk; //le nouveau chunk
 	block* blockPtr; //le nouveau bloc
-	//si la taille de bloc demandée est plus grande que la taille
+	//si la taille de bloc demandée est plus petite que la taille par défault d'un chunk
 	if (chunkSize >= size) {
 		newChunk = malloc(chunkSize+sizeof(memoryChunk)+sizeof(block));
 		blockPtr = (block*)(newChunk+sizeof(memoryChunk));
@@ -47,6 +47,7 @@ memoryChunk* createNewChunk(int size) {
 		blockPtr->free = false;
 		blockPtr->prevBlock = NULL;
 
+		//créer un bloc vide de la taille restante du chunk
 		block* freeBlock = (block*)(blockPtr->address + blockPtr->size);
 		freeBlock->address = freeBlock+1;
 		freeBlock->size = chunkSize - blockPtr->size;
@@ -56,7 +57,10 @@ memoryChunk* createNewChunk(int size) {
 		freeBlock->nextBlock = NULL;
 		blockPtr->nextBlock = freeBlock;
 		newChunk->maxFreeBlock = freeBlock;
+
+		//si la taille de bloc demandée est plus grande que la taille par défault d'un chunk
 	} else {
+		//créer un nouveau chunk avec le nouveau bloc de taille demandée prenant tout l'espace du chunk
 		newChunk = malloc(size + sizeof(block) + sizeof(memoryChunk));
 		blockPtr = (block*)(newChunk+1);
 		blockPtr->address = (blockPtr+1);
@@ -66,13 +70,13 @@ memoryChunk* createNewChunk(int size) {
 		blockPtr->prevBlock = NULL;
 		blockPtr->nextBlock = NULL;
 		newChunk->maxFreeBlock = NULL;
-		//newChunk->maxFreeBlock->size = 0;
 	}
-
+	//actualiser pointeurs
 	newChunk->head = blockPtr;
 	newChunk->nextChunk = NULL;
 	numberOfChunks++;
 
+	//si premier appel a create chunk, définir le premier pointeur de la mémoire
 	if (memory == NULL) {
 		memory = newChunk;
 		lastChunk = newChunk;
@@ -84,16 +88,20 @@ memoryChunk* createNewChunk(int size) {
 	return newChunk;
 };
 
+//trouver le chunk contenant le bloc libre le plus grand parmi tous les chunks
 void findBestChunk() {
 	memoryChunk* curChunk = memory;
 	memoryChunk* bestFreeSizeChunk = curChunk;
+	//passer au travers de tous les chunks
 	while(curChunk->nextChunk != NULL) {
+		//si block libre plus grand que celui de l'ancien plus grand chunk, remplacer par ce nouveau chunk
 		if(curChunk->maxFreeBlock != NULL && bestFreeSizeChunk->maxFreeBlock != NULL &&
 			curChunk->maxFreeBlock->size > bestFreeSizeChunk->maxFreeBlock->size) {
 			bestFreeSizeChunk = curChunk;
 		}
 		curChunk = curChunk->nextChunk;
 	}
+	//si aucun chunk libre, mettre plus grand chunk libre a null
 	if(bestFreeSizeChunk->maxFreeBlock == NULL) {
 		bestChunk = NULL;
 	} else {
@@ -101,15 +109,19 @@ void findBestChunk() {
 	}
 };
 
+//trouver le bloc le plus grand d'un chunk
 void findMaxFreeBlock(memoryChunk *chunk){
 	block *findBlock = chunk->head;
 	block *maxBlock = findBlock;
+	//tant qu'il reste des blocs a visiter
 	while(findBlock->nextBlock != NULL){
+		//si bloc libre plus grand que l'ancien plus grand, actualiser a celui-ci
 		if (findBlock->free == true && findBlock->size >= maxBlock->size){
 			maxBlock = findBlock;
 		}
 		findBlock = findBlock->nextBlock;
 	}
+	//si aucun bloc libre, mettre plus grand bloc libre a null
 	if(maxBlock->free == false){
 		chunk->maxFreeBlock = NULL;
 	} else {
@@ -117,38 +129,36 @@ void findMaxFreeBlock(memoryChunk *chunk){
 	}
 };
 
+//retourne une plage mémoire assez large.
 void *mymalloc(size_t size){
-	// doit retourner une plage mémoire assez large.
 	//si espace mémoire demandé de 0, ne rien faire
 	if (size == 0){
 		return NULL;
 	//Si aucun chunk, créer premier chunk et premier block
 	} else if (memory == NULL) {
-		//printf("memoire vide");
 		memoryChunk *chunk = createNewChunk(size);
 		bestChunk = chunk;
 
 		return (chunk->head->address);
 
-	// Tous les chunks sont remplis
+	// Tous les chunks sont remplis, en ajouter un avec le bloc
 	} else if (bestChunk == NULL) {
-		//printf("Créer nouveau chunk car autres remplis");
 		memoryChunk *chunk = createNewChunk(size);
 		if(chunk->maxFreeBlock != NULL) {
 			bestChunk = chunk;
 		}
-        return chunk->head->address;
+		return chunk->head->address;
+	//la taille demandée est plus grande que la taille maximale disponible dans un chunk, en créer un nouveau
 	} else if (size > bestChunk->maxFreeBlock->size) {
-		//printf("taille plus grande que bestChunk");
 		memoryChunk *chunk = createNewChunk(size);
+		//assigner le chunk a celui de taille maximale si nécessaire
 		if(chunk->maxFreeBlock != NULL && chunk->maxFreeBlock->size > bestChunk->maxFreeBlock->size){
 			bestChunk = chunk;
 		}
 		return (chunk->head->address);
 
-		//Si on a un free block disponible de la bonne taille
+		//Si on a un bloc disponible de la taille exacte
 	} else if(size == bestChunk->maxFreeBlock->size) {
-		//printf("block de taille exacte trouvé");
 		block* blockPtr = bestChunk->maxFreeBlock;
 		blockPtr->free = false;
 		blockPtr->count = 1;
@@ -159,7 +169,6 @@ void *mymalloc(size_t size){
 
 	// Si la taille du plus grand block free est plus grande que la size voulue
 	} else {
-		//printf("taille bloc free plus grand que taille voulue");
 		block *temp = (block *)bestChunk->maxFreeBlock->nextBlock;
 		block *newBlock = bestChunk->maxFreeBlock;
 		newBlock->address = newBlock + 1;
@@ -186,12 +195,14 @@ void *mymalloc(size_t size){
 	printf("This shouldn't appear\n");
 };
 
+//incrémenter le compteur de pointeurs d'un bloc
 int refinc(void *ptr) {
 	block *block = ptr-sizeof(block);
 	block->count++;
 	return block->count;
 };
 
+//trouver le chunk d'un bloc
 memoryChunk* findChunk(void* ptr){
 	memoryChunk *chunkPtr = memory;
 	while(chunkPtr->nextChunk != NULL){
@@ -203,31 +214,32 @@ memoryChunk* findChunk(void* ptr){
 	return chunkPtr;
 };
 
+//réduire le compteur de pointeurs d'un bloc et libére la mémoire du bloc si compteur = 0;
 void myfree(void *ptr){
-  // décrémente le compteur et libère la mémoire si et seulement si ce dernier est à zéro.
+	//si pointeur null, ne rien faire
 	if (ptr == NULL){
 		return;
 	}
 	block* ptrBlock = ((block*) ptr) - 1;
 	ptrBlock->count = ptrBlock->count - 1;
 
+	//si compteur = 0, libérer mémoire
   if (ptrBlock->count == 0){
 		ptrBlock->free = true;
+		//si bloc vide est précéder d'un bloc vide, les rassembler
 		if (ptrBlock->prevBlock!=NULL && ptrBlock->prevBlock->free == true) {
 			ptrBlock->prevBlock->size = ptrBlock->prevBlock->size + ptrBlock->size;
-			//printf("Premier : %i\n",ptrBlock->prevBlock->size);
 			ptrBlock->prevBlock->nextBlock = ptrBlock->nextBlock;
 			ptrBlock = ptrBlock->prevBlock;
 		}
 
+		//si bloc vide est suivi d'un bloc vide, les rassembler
 		if(ptrBlock->nextBlock != NULL && ptrBlock->nextBlock->free == true) {
-            //printf("%i\n",ptrBlock->size);
 			ptrBlock->size = ptrBlock->size + ptrBlock->nextBlock->size;
-			//printf("Second : %i\n",ptrBlock->size);
-			//printf("%i\n",ptrBlock->nextBlock->size);
 			ptrBlock->nextBlock = ptrBlock->nextBlock->nextBlock;
 		}
 
+		//si bloc vide est plus grand que bloc vide du meilleur chunk, le remplacer
 		if(bestChunk == NULL || ptrBlock->size > bestChunk->maxFreeBlock->size) {
 		memoryChunk *chunkPtr = findChunk(ptrBlock);
 		bestChunk = chunkPtr;
