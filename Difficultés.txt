@@ -8,3 +8,7 @@ Nous avons de la difficulté à comprendre si lorsque l'on appelle malloc, la m�
 
 - On ne sait pas si lorsqu'on demande 4096 octets de mémoire à malloc, la métadonnée de notre chunk est comprise dedans.
   
+Sources :
+- Métadonnées : http://tharikasblogs.blogspot.com/p/how-to-write-your-own-malloc-and-free.html
+- Implémentation liste : https://embeddedartistry.com/blog/2017/2/9/implementing-malloc-first-fit-free-list
+- block : https://medium.com/@andrestc/implementing-malloc-and-free-ba7e7704a473
