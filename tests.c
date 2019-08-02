@@ -1,6 +1,6 @@
 // Vous pouvez compiler tests.c comme ceci depuis le terminal:
 // gcc -o tests tests.c mymalloc.c
-// Ensuite vous pouvez exécuter avec : ./tests 
+// Ensuite vous pouvez exécuter avec : ./tests
 
 #include <stdio.h>
 #include <signal.h>
@@ -84,7 +84,7 @@ int test6(){
     current->next = p;
     current = p;
   }
-  printf("étape 1");
+
   // On efface quelques éléments
   current = root;
   int n = 0;
@@ -104,7 +104,7 @@ int test6(){
       current = tmp;
     }
   }
-  printf("étape 2");
+
   // Quelques appel à malloc voir si cela vous mélange un peu
   void *ptrArray[1024];
   for(int i = 0; i < 1024; i ++){
@@ -112,7 +112,7 @@ int test6(){
     *d = 435;
     ptrArray[i] = d;
   }
-  printf("étape 3");
+
   // On ajoute quelques éléments
   current = root;
   n = 0;
@@ -134,7 +134,7 @@ int test6(){
       current = p->next;
     }
   }
-  printf("étape 4");
+
   // Calcul de la somme
   current = root;
   long sum = root->valueInt + root->valueChar;
@@ -142,7 +142,7 @@ int test6(){
     sum += current->valueInt + current->valueChar;
     current = current->next;
   }
-  printf("étape 5");
+
   // Nettoyage de la mémoire
   current = root;
   while (current->next){
@@ -151,13 +151,14 @@ int test6(){
     current = tmp;
   }
   myfree(current);
-  printf("étape 6");
+
   for(int i = 0; i < 1024; i ++){
     myfree(ptrArray[i]);
   }
-  printf("étape 7");
   return sum;
 }
+
+
 
 void sigseg_handler(int signum) {
 #if defined(_WIN32) || defined(_WIN64)

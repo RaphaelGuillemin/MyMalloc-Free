@@ -9,6 +9,8 @@
 int chunkSize = 4096;
 //le nombre de chunks de mémoire
 int numberOfChunks;
+// Limite de chunks avant de passer à la deuxième manière d'ajouter des chunks pour gagner du temps de calcul
+int chunkLimit = 10000;
 
 //structure d'un bloc de mémoire (liste chainée de blocs)
 typedef struct block block;
@@ -32,6 +34,30 @@ struct memoryChunk{
 memoryChunk* memory; //pointeur vers le premier chunk de memoire
 memoryChunk* lastChunk; //pointeur vers le dernier chunk de memoire
 memoryChunk* bestChunk; //pointeur vers le chunk contenant le bloc libre le plus grand
+
+
+//deuxième fonction qui est appliquée pour ajouter des chunks lorsque la limite de chunks est dépassée pour accélerer le calcul
+void* newChunk(int size) {
+	if (size == 0) {
+        return NULL;
+    }
+		memoryChunk *newChunk; //le nouveau chunk
+		block* blockPtr; //le nouveau bloc
+		//définir nouveau chunk et le remplir directement avec le bloc
+    newChunk = malloc(size + sizeof(memoryChunk) + sizeof(block));
+    blockPtr = (block*)(newChunk + 1);
+    blockPtr->address = blockPtr + 1;
+		blockPtr->size = size;
+    blockPtr->free = false;
+		blockPtr->count = 1;
+    blockPtr->prevBlock = NULL;
+    blockPtr->nextBlock = NULL;
+    newChunk->head = blockPtr;
+		newChunk->maxFreeBlock=blockPtr;
+    newChunk->nextChunk = NULL;
+
+    return newChunk;
+}
 
 //fonction qui crée un nouveau chunk
 memoryChunk* createNewChunk(int size) {
@@ -140,6 +166,11 @@ void *mymalloc(size_t size){
 		bestChunk = chunk;
 
 		return (chunk->head->address);
+	//Si le nombre de chunk dépasse la taille de chunk que nous trouvons limite, utiliser l'autre fonction d'ajout de chunk
+	} else if (numberOfChunks > chunkLimit) {
+		lastChunk->nextChunk = newChunk(size);
+		lastChunk = lastChunk->nextChunk;
+		return (lastChunk->head->address);
 
 	// Tous les chunks sont remplis, en ajouter un avec le bloc
 	} else if (bestChunk == NULL) {
